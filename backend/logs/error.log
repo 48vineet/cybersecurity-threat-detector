@@ -1,0 +1,136 @@
+[ERROR] 2025-08-28T16:52:53.396Z - ❌ MongoDB connection failed (attempt 1/5): {"message":"option buffermaxentries is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T16:52:58.411Z - ❌ MongoDB connection failed (attempt 2/5): {"message":"option buffermaxentries is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T16:53:03.421Z - ❌ MongoDB connection failed (attempt 3/5): {"message":"option buffermaxentries is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T16:53:08.431Z - ❌ MongoDB connection failed (attempt 4/5): {"message":"option buffermaxentries is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T16:53:13.439Z - ❌ MongoDB connection failed (attempt 5/5): {"message":"option buffermaxentries is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T16:53:13.440Z - 🔥 Max connection retries reached. Please check MongoDB setup.
+[ERROR] 2025-08-28T16:53:13.441Z - ❌ Database setup failed:
+[ERROR] 2025-08-28T16:53:13.441Z - ❌ Failed to initialize server:
+[ERROR] 2025-08-28T16:53:13.442Z - Unhandled Rejection at:
+[ERROR] 2025-08-28T16:53:33.494Z - ❌ Failed to initialize server:
+[ERROR] 2025-08-28T16:53:56.018Z - ❌ MongoDB connection failed (attempt 1/5): {"message":"option buffermaxentries is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T16:54:01.032Z - ❌ MongoDB connection failed (attempt 2/5): {"message":"option buffermaxentries is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T16:54:06.954Z - ❌ MongoDB connection failed (attempt 1/5): {"message":"option buffermaxentries is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T16:54:11.962Z - ❌ MongoDB connection failed (attempt 2/5): {"message":"option buffermaxentries is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T16:54:16.969Z - ❌ MongoDB connection failed (attempt 3/5): {"message":"option buffermaxentries is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T16:54:21.976Z - ❌ MongoDB connection failed (attempt 4/5): {"message":"option buffermaxentries is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T16:54:26.985Z - ❌ MongoDB connection failed (attempt 5/5): {"message":"option buffermaxentries is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T16:54:26.986Z - 🔥 Max connection retries reached. Please check MongoDB setup.
+[ERROR] 2025-08-28T16:54:26.988Z - ❌ Database setup failed:
+[ERROR] 2025-08-28T16:54:26.990Z - ❌ Failed to initialize server:
+[ERROR] 2025-08-28T16:54:26.991Z - 🔥 MongoDB Connection Issue:
+[ERROR] 2025-08-28T16:54:26.992Z -    1. Make sure MongoDB is installed and running
+[ERROR] 2025-08-28T16:54:26.993Z -    2. Check if MongoDB service is started:
+[ERROR] 2025-08-28T16:54:26.994Z -       - Windows: net start MongoDB
+[ERROR] 2025-08-28T16:54:26.995Z -       - macOS: brew services start mongodb-community
+[ERROR] 2025-08-28T16:54:26.997Z -       - Linux: sudo systemctl start mongod
+[ERROR] 2025-08-28T16:54:26.998Z -    3. Verify connection string in .env file
+[ERROR] 2025-08-28T16:54:26.999Z -    4. Try connecting manually: mongo mongodb://localhost:27017
+[ERROR] 2025-08-28T16:55:25.719Z - ❌ MongoDB connection failed (attempt 1/5): {"message":"option buffermaxentries is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T16:55:30.347Z - ❌ MongoDB connection failed (attempt 1/5): {"message":"option buffermaxentries is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T16:56:23.347Z - ❌ MongoDB connection failed (attempt 1/5): {"message":"connect ECONNREFUSED 127.0.0.1:27017","name":"MongooseServerSelectionError"}
+[ERROR] 2025-08-28T16:56:38.362Z - ❌ MongoDB connection failed (attempt 2/5): {"message":"connect ECONNREFUSED 127.0.0.1:27017","name":"MongooseServerSelectionError"}
+[ERROR] 2025-08-28T16:56:53.384Z - ❌ MongoDB connection failed (attempt 3/5): {"message":"connect ECONNREFUSED 127.0.0.1:27017","name":"MongooseServerSelectionError"}
+[ERROR] 2025-08-28T16:57:08.411Z - ❌ MongoDB connection failed (attempt 4/5): {"message":"connect ECONNREFUSED 127.0.0.1:27017","name":"MongooseServerSelectionError"}
+[ERROR] 2025-08-28T16:57:23.439Z - ❌ MongoDB connection failed (attempt 5/5): {"message":"connect ECONNREFUSED 127.0.0.1:27017","name":"MongooseServerSelectionError"}
+[ERROR] 2025-08-28T16:57:23.441Z - 🔥 Max connection retries reached. Please check MongoDB setup.
+[ERROR] 2025-08-28T16:57:23.442Z - ❌ Database setup failed:
+[ERROR] 2025-08-28T16:57:23.443Z - ❌ Failed to initialize server:
+[ERROR] 2025-08-28T16:57:23.444Z - 🔥 MongoDB Connection Issue:
+[ERROR] 2025-08-28T16:57:23.445Z -    1. Make sure MongoDB is installed and running
+[ERROR] 2025-08-28T16:57:23.446Z -    2. Check if MongoDB service is started:
+[ERROR] 2025-08-28T16:57:23.448Z -       - Windows: net start MongoDB
+[ERROR] 2025-08-28T16:57:23.450Z -       - macOS: brew services start mongodb-community
+[ERROR] 2025-08-28T16:57:23.451Z -       - Linux: sudo systemctl start mongod
+[ERROR] 2025-08-28T16:57:23.453Z -    3. Verify connection string in .env file
+[ERROR] 2025-08-28T16:57:23.454Z -    4. Try connecting manually: mongo mongodb://localhost:27017
+[ERROR] 2025-08-28T17:00:16.770Z - ❌ MongoDB connection failed (attempt 1/5): {"message":"querySrv EBADNAME _mongodb._tcp.<cluster-url>","code":"EBADNAME","name":"Error"}
+[ERROR] 2025-08-28T17:00:21.787Z - ❌ MongoDB connection failed (attempt 2/5): {"message":"querySrv EBADNAME _mongodb._tcp.<cluster-url>","code":"EBADNAME","name":"Error"}
+[ERROR] 2025-08-28T17:00:26.811Z - ❌ MongoDB connection failed (attempt 3/5): {"message":"querySrv EBADNAME _mongodb._tcp.<cluster-url>","code":"EBADNAME","name":"Error"}
+[ERROR] 2025-08-28T17:00:31.825Z - ❌ MongoDB connection failed (attempt 4/5): {"message":"querySrv EBADNAME _mongodb._tcp.<cluster-url>","code":"EBADNAME","name":"Error"}
+[ERROR] 2025-08-28T17:00:36.836Z - ❌ MongoDB connection failed (attempt 5/5): {"message":"querySrv EBADNAME _mongodb._tcp.<cluster-url>","code":"EBADNAME","name":"Error"}
+[ERROR] 2025-08-28T17:00:36.838Z - 🔥 Max connection retries reached. Please check MongoDB setup.
+[ERROR] 2025-08-28T17:00:36.839Z - ❌ Database setup failed:
+[ERROR] 2025-08-28T17:00:36.839Z - ❌ Failed to initialize server:
+[ERROR] 2025-08-28T17:00:36.840Z - 🔥 MongoDB Connection Issue:
+[ERROR] 2025-08-28T17:00:36.840Z -    1. Make sure MongoDB is installed and running
+[ERROR] 2025-08-28T17:00:36.841Z -    2. Check if MongoDB service is started:
+[ERROR] 2025-08-28T17:00:36.841Z -       - Windows: net start MongoDB
+[ERROR] 2025-08-28T17:00:36.842Z -       - macOS: brew services start mongodb-community
+[ERROR] 2025-08-28T17:00:36.842Z -       - Linux: sudo systemctl start mongod
+[ERROR] 2025-08-28T17:00:36.843Z -    3. Verify connection string in .env file
+[ERROR] 2025-08-28T17:00:36.843Z -    4. Try connecting manually: mongo mongodb://localhost:27017
+[ERROR] 2025-08-28T17:00:42.174Z - ❌ MongoDB connection failed (attempt 1/5): {"message":"querySrv EBADNAME _mongodb._tcp.<cluster-url>","code":"EBADNAME","name":"Error"}
+[ERROR] 2025-08-28T17:00:46.523Z - ❌ MongoDB Atlas connection failed (attempt 1/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:00:49.828Z - ❌ MongoDB Atlas connection failed (attempt 1/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:00:54.846Z - ❌ MongoDB Atlas connection failed (attempt 2/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:00:59.862Z - ❌ MongoDB Atlas connection failed (attempt 3/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:01:04.873Z - ❌ MongoDB Atlas connection failed (attempt 4/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:01:08.669Z - ❌ MongoDB Atlas connection failed (attempt 1/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:01:13.692Z - ❌ MongoDB Atlas connection failed (attempt 2/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:01:18.708Z - ❌ MongoDB Atlas connection failed (attempt 3/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:01:23.726Z - ❌ MongoDB Atlas connection failed (attempt 4/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:01:28.750Z - ❌ MongoDB Atlas connection failed (attempt 5/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:01:28.751Z - 🔥 Max connection retries reached. Please check MongoDB Atlas setup.
+[ERROR] 2025-08-28T17:01:28.797Z - ❌ Database setup failed:
+[ERROR] 2025-08-28T17:01:28.797Z - ❌ Failed to initialize server:
+[ERROR] 2025-08-28T17:01:28.797Z - 🔥 MongoDB Connection Issue:
+[ERROR] 2025-08-28T17:01:28.798Z -    1. Make sure MongoDB is installed and running
+[ERROR] 2025-08-28T17:01:28.798Z -    2. Check if MongoDB service is started:
+[ERROR] 2025-08-28T17:01:28.799Z -       - Windows: net start MongoDB
+[ERROR] 2025-08-28T17:01:28.799Z -       - macOS: brew services start mongodb-community
+[ERROR] 2025-08-28T17:01:28.799Z -       - Linux: sudo systemctl start mongod
+[ERROR] 2025-08-28T17:01:28.800Z -    3. Verify connection string in .env file
+[ERROR] 2025-08-28T17:01:28.800Z -    4. Try connecting manually: mongo mongodb://localhost:27017
+[ERROR] 2025-08-28T17:02:44.977Z - ❌ MongoDB Atlas connection failed (attempt 1/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:02:49.993Z - ❌ MongoDB Atlas connection failed (attempt 2/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:02:55.012Z - ❌ MongoDB Atlas connection failed (attempt 3/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:03:00.019Z - ❌ MongoDB Atlas connection failed (attempt 4/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:03:05.034Z - ❌ MongoDB Atlas connection failed (attempt 5/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:03:05.035Z - 🔥 Max connection retries reached. Please check MongoDB Atlas setup.
+[ERROR] 2025-08-28T17:03:05.052Z - ❌ Database setup failed:
+[ERROR] 2025-08-28T17:03:05.052Z - ❌ Failed to initialize server:
+[ERROR] 2025-08-28T17:03:05.053Z - 🔥 MongoDB Connection Issue:
+[ERROR] 2025-08-28T17:03:05.053Z -    1. Make sure MongoDB is installed and running
+[ERROR] 2025-08-28T17:03:05.054Z -    2. Check if MongoDB service is started:
+[ERROR] 2025-08-28T17:03:05.054Z -       - Windows: net start MongoDB
+[ERROR] 2025-08-28T17:03:05.054Z -       - macOS: brew services start mongodb-community
+[ERROR] 2025-08-28T17:03:05.055Z -       - Linux: sudo systemctl start mongod
+[ERROR] 2025-08-28T17:03:05.055Z -    3. Verify connection string in .env file
+[ERROR] 2025-08-28T17:03:05.056Z -    4. Try connecting manually: mongo mongodb://localhost:27017
+[ERROR] 2025-08-28T17:04:31.889Z - ❌ MongoDB Atlas connection failed (attempt 1/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:04:36.905Z - ❌ MongoDB Atlas connection failed (attempt 2/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:04:41.914Z - ❌ MongoDB Atlas connection failed (attempt 3/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:04:46.923Z - ❌ MongoDB Atlas connection failed (attempt 4/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:04:51.929Z - ❌ MongoDB Atlas connection failed (attempt 5/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:04:51.932Z - 🔥 Max connection retries reached. Please check MongoDB Atlas setup.
+[ERROR] 2025-08-28T17:04:51.971Z - ❌ Database setup failed:
+[ERROR] 2025-08-28T17:04:51.972Z - ❌ Failed to initialize server:
+[ERROR] 2025-08-28T17:04:51.973Z - 🔥 MongoDB Connection Issue:
+[ERROR] 2025-08-28T17:04:51.973Z -    1. Make sure MongoDB is installed and running
+[ERROR] 2025-08-28T17:04:51.974Z -    2. Check if MongoDB service is started:
+[ERROR] 2025-08-28T17:04:51.975Z -       - Windows: net start MongoDB
+[ERROR] 2025-08-28T17:04:51.975Z -       - macOS: brew services start mongodb-community
+[ERROR] 2025-08-28T17:04:51.976Z -       - Linux: sudo systemctl start mongod
+[ERROR] 2025-08-28T17:04:51.977Z -    3. Verify connection string in .env file
+[ERROR] 2025-08-28T17:04:51.977Z -    4. Try connecting manually: mongo mongodb://localhost:27017
+[ERROR] 2025-08-28T17:06:37.911Z - ❌ MongoDB Atlas connection failed (attempt 1/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:06:42.923Z - ❌ MongoDB Atlas connection failed (attempt 2/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:06:47.932Z - ❌ MongoDB Atlas connection failed (attempt 3/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:06:52.946Z - ❌ MongoDB Atlas connection failed (attempt 4/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:06:57.963Z - ❌ MongoDB Atlas connection failed (attempt 5/5): {"message":"option serverselectionretrydelayms is not supported","name":"MongoParseError"}
+[ERROR] 2025-08-28T17:06:57.965Z - 🔥 Max connection retries reached. Please check MongoDB Atlas setup.
+[ERROR] 2025-08-28T17:06:57.987Z - ❌ Database setup failed:
+[ERROR] 2025-08-28T17:06:57.988Z - ❌ Failed to initialize server:
+[ERROR] 2025-08-28T17:06:57.989Z - 🔥 MongoDB Connection Issue:
+[ERROR] 2025-08-28T17:06:57.990Z -    1. Make sure MongoDB is installed and running
+[ERROR] 2025-08-28T17:06:57.993Z -    2. Check if MongoDB service is started:
+[ERROR] 2025-08-28T17:06:57.994Z -       - Windows: net start MongoDB
+[ERROR] 2025-08-28T17:06:57.994Z -       - macOS: brew services start mongodb-community
+[ERROR] 2025-08-28T17:06:57.995Z -       - Linux: sudo systemctl start mongod
+[ERROR] 2025-08-28T17:06:57.996Z -    3. Verify connection string in .env file
+[ERROR] 2025-08-28T17:06:57.996Z -    4. Try connecting manually: mongo mongodb://localhost:27017
+[ERROR] 2025-08-28T17:07:48.163Z - Error in threat generation/analysis:
+[ERROR] 2025-08-28T17:07:51.021Z - Error in threat generation/analysis:
+[ERROR] 2025-08-28T17:07:53.873Z - Error in threat generation/analysis:
+[ERROR] 2025-08-28T17:07:56.729Z - Error in threat generation/analysis:
