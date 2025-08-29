@@ -48,13 +48,12 @@ const initialState = {
   error: null,
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ""; // Use relative path for proxy
 
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   useEffect(() => {
-    axios.defaults.baseURL = API_BASE_URL;
     const token = localStorage.getItem("token");
     if (token) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -64,10 +63,19 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/auth/profile`);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        dispatch({ type: "LOGOUT" });
+        return;
+      }
+
+      const response = await axios.get(`/api/auth/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
       dispatch({
         type: "LOGIN_SUCCESS",
-        payload: { user: response.data.user, token: state.token },
+        payload: { user: response.data.user, token: token },
       });
     } catch (error) {
       localStorage.removeItem("token");
@@ -78,14 +86,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(credentials),
-        }
-      );
+      dispatch({ type: "LOGIN_START" });
+
+      const response = await fetch(`/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -93,14 +100,19 @@ export const AuthProvider = ({ children }) => {
       }
 
       const data = await response.json();
+
+      localStorage.setItem("token", data.token);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+
       dispatch({
         type: "LOGIN_SUCCESS",
         payload: { user: data.user, token: data.token },
       });
-      localStorage.setItem("token", data.token);
+
       return { success: true };
     } catch (error) {
       console.error("Login error:", error.message);
+      dispatch({ type: "LOGIN_FAILURE", payload: error.message });
       return { success: false, error: error.message };
     }
   };
@@ -108,11 +120,18 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       dispatch({ type: "LOGIN_START" });
-      const response = await axios.post(
-        `${API_BASE_URL}/auth/register`,
-        userData
-      );
-      const { token, user } = response.data;
+      const response = await fetch(`/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Registration failed");
+      }
+
+      const { token, user } = await response.json();
 
       localStorage.setItem("token", token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -120,7 +139,7 @@ export const AuthProvider = ({ children }) => {
       dispatch({ type: "LOGIN_SUCCESS", payload: { user, token } });
       return { success: true };
     } catch (error) {
-      const errorMessage = error.response?.data?.error || "Registration failed";
+      const errorMessage = error.message || "Registration failed";
       dispatch({ type: "LOGIN_FAILURE", payload: errorMessage });
       return { success: false, error: errorMessage };
     }

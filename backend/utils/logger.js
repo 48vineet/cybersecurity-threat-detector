@@ -1,4 +1,6 @@
 const DEDUPE_WINDOW_MS = Number(process.env.LOG_DEDUPE_WINDOW_MS || 5000);
+const fs = require("fs");
+const path = require("path");
 
 // --- helpers ---
 function serializeError(err) {
@@ -65,51 +67,69 @@ function shouldSuppress(signature, now) {
   return false;
 }
 
-function logWithLevel(level, ...args) {
-  const ts = nowIso();
+class Logger {
+  constructor() {
+    this.logLevel = process.env.LOG_LEVEL || "info";
+    this.logFile = process.env.LOG_FILE || "logs/app.log";
 
-  // Normalize args
-  const message = typeof args[0] === "string" ? args[0] : String(args[0] ?? "");
-  const rest = typeof args[0] === "string" ? args.slice(1) : args.slice(1);
-
-  const errors = [];
-  const extras = [];
-  for (const a of rest) {
-    if (a instanceof Error) errors.push(serializeError(a));
-    else if (a && a.error instanceof Error) {
-      // common pattern: logger.error('msg', { error })
-      const copy = { ...a, error: serializeError(a.error) };
-      extras.push(copy);
-    } else if (typeof a === "object") extras.push(a);
-    else if (a !== undefined) extras.push({ data: a });
+    // Ensure logs directory exists
+    const logDir = path.dirname(this.logFile);
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
   }
 
-  // Dedupe only for error logs
-  if (level === "ERROR") {
-    const signature = buildSignature(level, message, errors);
-    if (shouldSuppress(signature, Date.now())) return;
+  log(level, message, data = null) {
+    const timestamp = new Date().toISOString();
+    const logEntry = {
+      timestamp,
+      level: level.toUpperCase(),
+      message,
+      ...(data && { data }),
+    };
+
+    // Console output
+    const consoleMessage = `[${timestamp}] ${level.toUpperCase()}: ${message}`;
+
+    switch (level) {
+      case "error":
+        console.error(consoleMessage, data || "");
+        break;
+      case "warn":
+        console.warn(consoleMessage, data || "");
+        break;
+      case "info":
+        console.info(consoleMessage, data || "");
+        break;
+      default:
+        console.log(consoleMessage, data || "");
+    }
+
+    // File output
+    try {
+      fs.appendFileSync(this.logFile, JSON.stringify(logEntry) + "\n");
+    } catch (error) {
+      console.error("Failed to write to log file:", error.message);
+    }
   }
 
-  // Construct one-line output to keep existing style, append JSON metadata
-  const meta = {};
-  if (errors.length) meta.error = errors[0]; // include first error fully
-  if (extras.length) meta.meta = extras.length === 1 ? extras[0] : extras;
+  error(message, data) {
+    this.log("error", message, data);
+  }
 
-  const hasMeta = Object.keys(meta).length > 0;
-  const line = `[${level}] ${ts} - ${message}${
-    hasMeta ? " " + safeStringify(meta) : ""
-  }`;
+  warn(message, data) {
+    this.log("warn", message, data);
+  }
 
-  // eslint-disable-next-line no-console
-  if (level === "ERROR") console.error(line);
-  else if (level === "WARN") console.warn(line);
-  else console.log(line);
+  info(message, data) {
+    this.log("info", message, data);
+  }
+
+  debug(message, data) {
+    if (this.logLevel === "debug") {
+      this.log("debug", message, data);
+    }
+  }
 }
 
-const logger = {
-  info: (...args) => logWithLevel("INFO", ...args),
-  warn: (...args) => logWithLevel("WARN", ...args),
-  error: (...args) => logWithLevel("ERROR", ...args),
-};
-
-module.exports = logger;
+module.exports = new Logger();

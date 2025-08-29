@@ -54,9 +54,25 @@ class NetworkFeatureExtractor {
     return connections.filter((conn) => conn.state === state).length;
   }
 
+  countByProtocol(connections, protocol) {
+    return connections.filter((conn) => conn.protocol === protocol).length;
+  }
+
+  countHighPorts(connections) {
+    return connections.filter((conn) => conn.remotePort > 1024).length;
+  }
+
+  countPrivilegedPorts(connections) {
+    return connections.filter((conn) => conn.remotePort <= 1024).length;
+  }
+
   countExternalConnections(connections) {
     return connections.filter((conn) => !this.isInternalIP(conn.remoteIP))
       .length;
+  }
+
+  sumNetworkStats(stats, key) {
+    return stats.reduce((sum, s) => sum + (s[key] || 0), 0);
   }
 
   isInternalIP(ip) {

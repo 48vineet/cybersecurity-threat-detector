@@ -196,82 +196,102 @@ const NetworkTopology = () => {
 
         {/* Network Diagram */}
         <div className="relative bg-gray-900 rounded-lg p-8 min-h-96">
-          <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 1 }}>
-            {/* Network Connections */}
-            {networkData.connections.map((connection, index) => {
-              const sourceNode = networkData.nodes.find(
-                (n) => n.id === connection.source
-              );
-              const targetNode = networkData.nodes.find(
-                (n) => n.id === connection.target
-              );
-
-              if (!sourceNode || !targetNode) return null;
-
-              return (
-                <motion.line
-                  key={`${connection.source}-${connection.target}`}
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 0.6 }}
-                  transition={{ delay: index * 0.05, duration: 0.5 }}
-                  x1={`${sourceNode.position.x}%`}
-                  y1={`${sourceNode.position.y}%`}
-                  x2={`${targetNode.position.x}%`}
-                  y2={`${targetNode.position.y}%`}
-                  className={`${getConnectionColor(
-                    connection.threatLevel,
-                    connection.blocked
-                  )} stroke-2`}
-                  strokeDasharray={connection.blocked ? "5,5" : "none"}
-                />
-              );
-            })}
-          </svg>
-
-          {/* Network Nodes */}
-          {networkData.nodes.map((node, index) => {
-            const Icon = getNodeIcon(node.type);
-
-            return (
-              <motion.div
-                key={node.id}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: index * 0.1 }}
-                className="absolute cursor-pointer"
-                style={{
-                  left: `${node.position.x}%`,
-                  top: `${node.position.y}%`,
-                  transform: "translate(-50%, -50%)",
-                  zIndex: 2,
-                }}
-                onClick={() => setSelectedNode(node)}
+          {networkData.nodes.length === 0 ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="text-gray-400 mb-2">
+                  No network data available
+                </div>
+                <div className="text-sm text-gray-500">
+                  Network monitoring is starting up or no threats detected yet
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <svg
+                className="absolute inset-0 w-full h-full"
+                style={{ zIndex: 1 }}
               >
-                <div
-                  className={`relative p-3 rounded-lg border-2 ${getNodeColor(
-                    node.status
-                  )} shadow-lg`}
-                >
-                  <Icon className="h-6 w-6 text-white" />
+                {/* Network Connections */}
+                {networkData.connections.map((connection, index) => {
+                  const sourceNode = networkData.nodes.find(
+                    (n) => n.id === connection.source
+                  );
+                  const targetNode = networkData.nodes.find(
+                    (n) => n.id === connection.target
+                  );
 
-                  {/* Threat indicator */}
-                  {node.threats > 0 && (
-                    <div className="absolute -top-2 -right-2 bg-danger-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-bounce">
-                      {node.threats}
+                  if (!sourceNode || !targetNode) return null;
+
+                  return (
+                    <motion.line
+                      key={`${connection.source}-${connection.target}`}
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 0.6 }}
+                      transition={{ delay: index * 0.05, duration: 0.5 }}
+                      x1={`${sourceNode.position.x}%`}
+                      y1={`${sourceNode.position.y}%`}
+                      x2={`${targetNode.position.x}%`}
+                      y2={`${targetNode.position.y}%`}
+                      className={`${getConnectionColor(
+                        connection.threatLevel,
+                        connection.blocked
+                      )} stroke-2`}
+                      strokeDasharray={connection.blocked ? "5,5" : "none"}
+                    />
+                  );
+                })}
+              </svg>
+
+              {/* Network Nodes */}
+              {networkData.nodes.map((node, index) => {
+                const Icon = getNodeIcon(node.type);
+
+                return (
+                  <motion.div
+                    key={node.id}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="absolute cursor-pointer"
+                    style={{
+                      left: `${node.position.x}%`,
+                      top: `${node.position.y}%`,
+                      transform: "translate(-50%, -50%)",
+                      zIndex: 2,
+                    }}
+                    onClick={() => setSelectedNode(node)}
+                  >
+                    <div
+                      className={`relative p-3 rounded-lg border-2 ${getNodeColor(
+                        node.status
+                      )} shadow-lg`}
+                    >
+                      <Icon className="h-6 w-6 text-white" />
+
+                      {/* Threat indicator */}
+                      {node.threats > 0 && (
+                        <div className="absolute -top-2 -right-2 bg-danger-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-bounce">
+                          {node.threats}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                {/* Node label */}
-                <div className="mt-2 text-center">
-                  <div className="text-xs font-medium text-white bg-gray-800/90 rounded px-2 py-1">
-                    {node.label}
-                  </div>
-                  <div className="text-xs text-gray-400 mt-1">{node.ip}</div>
-                </div>
-              </motion.div>
-            );
-          })}
+                    {/* Node label */}
+                    <div className="mt-2 text-center">
+                      <div className="text-xs font-medium text-white bg-gray-800/90 rounded px-2 py-1">
+                        {node.label}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {node.ip}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </>
+          )}
         </div>
       </div>
 

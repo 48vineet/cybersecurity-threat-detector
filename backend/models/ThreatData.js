@@ -19,6 +19,8 @@ const threatDataSchema = new mongoose.Schema(
         "SMB",
         "RDP",
         "Telnet",
+        "MIXED", // For real network data with multiple protocols
+        "UNKNOWN", // For cases where protocol is not determined
       ],
       required: true,
     },
@@ -54,6 +56,7 @@ const threatDataSchema = new mongoose.Schema(
         "BRUTE_FORCE",
         "DATA_EXFILTRATION",
         "ANOMALY",
+        "NETWORK_ANOMALY", // For real network monitoring
         "UNKNOWN",
         "BENIGN",
         "INSIDER_THREAT",
@@ -67,7 +70,14 @@ const threatDataSchema = new mongoose.Schema(
       {
         method: {
           type: String,
-          enum: ["SIGNATURE", "ANOMALY", "BEHAVIORAL", "ML_MODEL"],
+          enum: [
+            "SIGNATURE", 
+            "ANOMALY", 
+            "BEHAVIORAL", 
+            "ML_MODEL",
+            "REAL_TIME_NETWORK_ANALYSIS", // For real network monitoring
+            "BASIC", // For fallback analysis
+          ],
         },
         confidence: { type: Number, min: 0, max: 1 },
         details: String,

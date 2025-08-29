@@ -24,13 +24,15 @@ const ActiveThreats = () => {
 
   const filteredAndSortedThreats = useMemo(() => {
     let filtered = threats.filter((threat) => {
+      // Safely handle undefined/null values
+      const sourceIP = threat.sourceIP || "";
+      const destinationIP = threat.destinationIP || "";
+      const threatCategory = threat.threatCategory || "";
+      
       const matchesSearch =
-        threat.sourceIP.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        threat.destinationIP.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (threat.threatCategory &&
-          threat.threatCategory
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()));
+        sourceIP.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        destinationIP.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        threatCategory.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesLevel =
         filterLevel === "ALL" || threat.threatLevel === filterLevel;
@@ -193,7 +195,7 @@ const ActiveThreats = () => {
 
                   return (
                     <motion.tr
-                      key={threat._id || index}
+                      key={threat._id || `threat-${index}`}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 20 }}
@@ -466,7 +468,7 @@ const ActiveThreats = () => {
                     </h4>
                     <ul className="text-sm text-white space-y-1">
                       {selectedThreat.mitigationActions.map((action, index) => (
-                        <li key={index} className="flex items-center">
+                        <li key={`detail-${index}`} className="flex items-center">
                           <CheckCircleIcon className="h-4 w-4 text-success-400 mr-2" />
                           {action}
                         </li>

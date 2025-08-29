@@ -4,9 +4,10 @@ const crypto = require("crypto");
 const mongoose = require("mongoose");
 
 class AdvancedThreatDetectionEngine {
-  constructor(io, wss) {
+  constructor(io, wss, server) {
     this.io = io;
     this.wss = wss;
+    this.server = server;
     this.isRunning = false;
     this.detectionModels = new Map();
     this.threatIntelligence = new Map();
@@ -220,33 +221,274 @@ class AdvancedThreatDetectionEngine {
   //   // Removed - data will come from real agents
   // }
 
-  // Add real data processing method
+  // Enhanced real-time network data processing
   async processRealTimeData(realNetworkData) {
     try {
-      const analysisResult = await this.analyzeComprehensiveThreat(
-        realNetworkData
-      );
+      logger.info("🔍 Processing real-time network data...");
+      
+      // Extract threat indicators from network data
+      const threatIndicators = this.extractThreatIndicators(realNetworkData);
+      
+      if (threatIndicators.length > 0) {
+        // Create comprehensive threat analysis
+        const analysisResult = await this.analyzeRealNetworkThreat(
+          realNetworkData,
+          threatIndicators
+        );
 
-      if (analysisResult.threatScore > 0.1) {
-        this.broadcastThreatUpdate(analysisResult);
-        this.recentThreats.push(analysisResult);
+        if (analysisResult.threatScore > 0.1) {
+          this.broadcastThreatUpdate(analysisResult);
+          this.recentThreats.push(analysisResult);
 
-        if (this.recentThreats.length > 200) {
-          this.recentThreats.shift();
-        }
+          if (this.recentThreats.length > 200) {
+            this.recentThreats.shift();
+          }
 
-        // Save to database if connected
-        if (mongoose.connection.readyState === 1) {
-          try {
+                  // Save to database if connected, otherwise save to in-memory storage
+        try {
+          if (mongoose.connection && mongoose.connection.readyState === 1) {
             const threatData = new ThreatData(analysisResult);
             await threatData.save();
-          } catch (persistErr) {
-            logger.error("Failed to persist real threat data:", persistErr);
+            logger.info("💾 Threat data saved to database");
+          } else {
+            // Save to in-memory storage when database is not available
+            if (this.server && this.server.inMemoryStorage) {
+              await this.server.inMemoryStorage.saveThreat(analysisResult);
+              logger.info("💾 Threat data saved to in-memory storage");
+            }
           }
+        } catch (persistErr) {
+          logger.error("Failed to persist real threat data:", persistErr);
+        }
         }
       }
+
+      // Always broadcast network status updates
+      this.broadcastNetworkStatus(realNetworkData);
+      
     } catch (error) {
       logger.error("Error processing real-time data:", error);
+    }
+  }
+
+  // Extract threat indicators from real network data
+  extractThreatIndicators(networkData) {
+    const indicators = [];
+
+    try {
+      // Check for suspicious connections
+      if (networkData.connectionAnalysis && networkData.connectionAnalysis.suspiciousConnections) {
+        networkData.connectionAnalysis.suspiciousConnections.forEach(conn => {
+          indicators.push({
+            type: 'SUSPICIOUS_CONNECTION',
+            severity: 'MEDIUM',
+            source: conn.remoteIP,
+            details: `Suspicious connection to ${conn.remoteIP}:${conn.remotePort} (${conn.protocol})`,
+            connection: conn
+          });
+        });
+      }
+
+      // Check for unusual network activity
+      if (networkData.networkStats) {
+        networkData.networkStats.forEach(stat => {
+          if (stat.errors > 10 || stat.dropped > 5) {
+            indicators.push({
+              type: 'NETWORK_ERRORS',
+              severity: 'HIGH',
+              source: stat.interface,
+              details: `High error/drop rate on ${stat.interface}: ${stat.errors} errors, ${stat.dropped} dropped`,
+              stats: stat
+            });
+          }
+        });
+      }
+
+      // Check for threat indicators from network agent
+      if (networkData.threatIndicators && networkData.threatIndicators.length > 0) {
+        networkData.threatIndicators.forEach(indicator => {
+          indicators.push({
+            type: 'NETWORK_ANOMALY',
+            severity: 'MEDIUM',
+            source: 'Network Agent',
+            details: indicator,
+            timestamp: networkData.timestamp
+          });
+        });
+      }
+
+      // Check for unusual connection patterns
+      if (networkData.connectionAnalysis) {
+        const { externalConnections, internalConnections } = networkData.connectionAnalysis;
+        
+        if (externalConnections.length > 20) {
+          indicators.push({
+            type: 'HIGH_EXTERNAL_CONNECTIONS',
+            severity: 'MEDIUM',
+            source: 'Network Analysis',
+            details: `High number of external connections: ${externalConnections.length}`,
+            connections: externalConnections
+          });
+        }
+
+        if (internalConnections.length > 50) {
+          indicators.push({
+            type: 'HIGH_INTERNAL_CONNECTIONS',
+            severity: 'LOW',
+            source: 'Network Analysis',
+            details: `High number of internal connections: ${internalConnections.length}`,
+            connections: internalConnections
+          });
+        }
+      }
+
+    } catch (error) {
+      logger.error("Error extracting threat indicators:", error);
+    }
+
+    return indicators;
+  }
+
+  // Analyze real network threats
+  async analyzeRealNetworkThreat(networkData, threatIndicators) {
+    const startTime = Date.now();
+    
+    try {
+      // Calculate threat score based on indicators
+      let threatScore = 0;
+      let threatLevel = 'LOW';
+      let threatCategory = 'NETWORK_ANOMALY';
+      
+      threatIndicators.forEach(indicator => {
+        switch (indicator.severity) {
+          case 'CRITICAL':
+            threatScore += 0.4;
+            break;
+          case 'HIGH':
+            threatScore += 0.3;
+            break;
+          case 'MEDIUM':
+            threatScore += 0.2;
+            break;
+          case 'LOW':
+            threatScore += 0.1;
+            break;
+        }
+      });
+
+      // Normalize threat score
+      threatScore = Math.min(threatScore, 1.0);
+      
+      // Determine threat level
+      if (threatScore >= 0.8) threatLevel = 'CRITICAL';
+      else if (threatScore >= 0.6) threatLevel = 'HIGH';
+      else if (threatScore >= 0.3) threatLevel = 'MEDIUM';
+      else threatLevel = 'LOW';
+
+      // Create threat analysis result
+      const analysisResult = {
+        timestamp: new Date(),
+        sourceIP: networkData.publicIP || 'Unknown',
+        destinationIP: networkData.localIPs?.[0]?.ip || 'Unknown',
+        protocol: 'MIXED',
+        packetSize: 0,
+        threatScore: Math.round(threatScore * 1000) / 1000,
+        threatLevel: threatLevel,
+        threatCategory: threatCategory,
+        detectionMethods: [
+          {
+            method: 'REAL_TIME_NETWORK_ANALYSIS',
+            confidence: Math.min(threatScore + 0.2, 1.0),
+            details: `Real-time network monitoring detected ${threatIndicators.length} threat indicators`
+          }
+        ],
+        mitigationActions: this.generateNetworkMitigationActions(threatIndicators),
+        isBlocked: threatScore > 0.7,
+        blockReason: threatScore > 0.7 ? 'Automated threat response based on real network data' : null,
+        processingTime: Date.now() - startTime,
+        
+        // Network-specific data
+        networkData: {
+          publicIP: networkData.publicIP,
+          localIPs: networkData.localIPs,
+          connectionCount: networkData.connections?.length || 0,
+          suspiciousConnections: networkData.connectionAnalysis?.suspiciousConnections?.length || 0,
+          externalConnections: networkData.connectionAnalysis?.externalConnections?.length || 0,
+          threatIndicators: networkData.threatIndicators || []
+        }
+      };
+
+      return analysisResult;
+
+    } catch (error) {
+      logger.error("Error analyzing real network threat:", error);
+      return this.getBasicThreatAnalysis(networkData);
+    }
+  }
+
+  // Generate mitigation actions for network threats
+  generateNetworkMitigationActions(threatIndicators) {
+    const actions = [];
+
+    threatIndicators.forEach(indicator => {
+      switch (indicator.type) {
+        case 'SUSPICIOUS_CONNECTION':
+          actions.push(`Investigate connection to ${indicator.source}`);
+          actions.push('Review firewall rules');
+          break;
+        case 'NETWORK_ERRORS':
+          actions.push(`Check network interface ${indicator.source} for hardware issues`);
+          actions.push('Review network configuration');
+          break;
+        case 'HIGH_EXTERNAL_CONNECTIONS':
+          actions.push('Review external connection policies');
+          actions.push('Implement connection rate limiting');
+          break;
+        case 'NETWORK_ANOMALY':
+          actions.push('Review network baseline for changes');
+          actions.push('Monitor for additional anomalies');
+          break;
+      }
+    });
+
+    return actions;
+  }
+
+  // Broadcast network status updates
+  broadcastNetworkStatus(networkData) {
+    try {
+      if (this.io) {
+        this.io.to("network").emit("networkStatusUpdate", {
+          timestamp: new Date(),
+          publicIP: networkData.publicIP,
+          localIPs: networkData.localIPs,
+          connectionCount: networkData.connections?.length || 0,
+          networkStats: networkData.networkStats,
+          threatIndicators: networkData.threatIndicators || []
+        });
+      }
+
+      if (this.wss && this.wss.clients) {
+        const message = JSON.stringify({
+          type: "NETWORK_STATUS_UPDATE",
+          data: {
+            timestamp: new Date(),
+            publicIP: networkData.publicIP,
+            localIPs: networkData.localIPs,
+            connectionCount: networkData.connections?.length || 0,
+            networkStats: networkData.networkStats,
+            threatIndicators: networkData.threatIndicators || []
+          }
+        });
+
+        this.wss.clients.forEach((client) => {
+          if (client.readyState === 1) {
+            client.send(message);
+          }
+        });
+      }
+    } catch (error) {
+      logger.error("Error broadcasting network status:", error);
     }
   }
 
@@ -567,7 +809,7 @@ class AdvancedThreatDetectionEngine {
       threatLevel: this.calculateThreatLevel(Math.random() * 0.5 + 0.3),
       isBlocked: false,
       detectionMethods: [
-        { method: "BASIC", confidence: 0.5, details: "Fallback analysis" },
+        { method: "ANOMALY", confidence: 0.5, details: "Fallback analysis" },
       ],
       processingTime: 5,
     };
@@ -605,7 +847,8 @@ class AdvancedThreatDetectionEngine {
     const isBlocked =
       threatScore > 0.7 || this.isMaliciousIP(originalData.sourceIP);
 
-    return {
+    // Ensure all required fields are present
+    const result = {
       ...originalData,
       timestamp: new Date(),
       threatScore: Math.round(threatScore * 1000) / 1000,
@@ -617,6 +860,17 @@ class AdvancedThreatDetectionEngine {
         ? this.generateMitigationActions(originalData)
         : [],
     };
+
+    // Validate required fields
+    if (!result.sourceIP || !result.destinationIP || !result.protocol || !result.packetSize) {
+      logger.warn("Missing required fields in threat data, using defaults");
+      result.sourceIP = result.sourceIP || "0.0.0.0";
+      result.destinationIP = result.destinationIP || "0.0.0.0";
+      result.protocol = result.protocol || "TCP";
+      result.packetSize = result.packetSize || 64;
+    }
+
+    return result;
   }
 
   isMaliciousIP(ip) {
@@ -995,24 +1249,24 @@ class AnomalyDetectionEngine {
       detected = true;
     }
 
-    // Port anomaly
-    if (threatData.features.portNumber > 8000) {
+    // Port anomaly - check if features exist
+    if (threatData.features && threatData.features.portNumber > 8000) {
       threatScore += 0.2;
     }
 
-    // High data transfer rate
-    if (threatData.features.dataTransferRate > 5000) {
+    // High data transfer rate - check if features exist
+    if (threatData.features && threatData.features.dataTransferRate > 5000) {
       threatScore += 0.4;
       detected = true;
     }
 
-    // Entropy anomaly
-    if (threatData.features.payloadEntropy > 0.7) {
+    // Entropy anomaly - check if features exist
+    if (threatData.features && threatData.features.payloadEntropy > 0.7) {
       threatScore += 0.3;
     }
 
-    // Connection frequency anomaly
-    if (threatData.features.requestFrequency > 50) {
+    // Connection frequency anomaly - check if features exist
+    if (threatData.features && threatData.features.requestFrequency > 50) {
       threatScore += 0.3;
       detected = true;
     }
@@ -1039,20 +1293,21 @@ class BehavioralAnalysisEngine {
 
     // Off-hours activity (assuming business hours 9-17)
     if (currentHour < 9 || currentHour > 17) {
-      if (threatData.features.dataTransferRate > 2000) {
+      if (threatData.features && threatData.features.dataTransferRate > 2000) {
         threatScore += 0.4;
         detected = true;
       }
     }
 
     // Frequency analysis
-    if (threatData.features.requestFrequency > 30) {
+    if (threatData.features && threatData.features.requestFrequency > 30) {
       threatScore += 0.3;
       detected = true;
     }
 
     // Connection duration analysis
     if (
+      threatData.features &&
       threatData.features.connectionDuration < 5 &&
       threatData.features.requestFrequency > 10
     ) {

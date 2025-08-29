@@ -9,6 +9,7 @@ const schedulerService = require("./services/scheduler");
 const { authMiddleware } = require("./middleware/auth"); // Ensure correct import
 const errorHandler = require("./middleware/errorHandler");
 const logger = require("./utils/logger");
+const InMemoryStorage = require("./services/inMemoryStorage");
 require("dotenv").config();
 
 // NEW: remove hard dependency on agents (lazy-load later)
@@ -50,6 +51,9 @@ class AdvancedCyberSecurityServer {
     // NEW: track DB connectivity instead of exiting on error
     this.dbConnected = false;
 
+    // Initialize in-memory storage for when database is not available
+    this.inMemoryStorage = new InMemoryStorage();
+
     this.initialize();
   }
 
@@ -59,6 +63,7 @@ class AdvancedCyberSecurityServer {
     this.setupRoutes();
     this.setupSocketIO();
     this.setupWebSocketServer();
+    this.setupNetworkAgent(); // <-- ADD THIS LINE
     this.setupRealTimeServices();
     this.setupErrorHandling();
     this.startServer();
@@ -99,7 +104,7 @@ class AdvancedCyberSecurityServer {
 
     this.app.use(
       cors({
-        origin: "http://localhost:5173", // Ensure this matches your frontend URL
+        origin: process.env.CORS_ORIGIN || "http://localhost:5173", // Ensure this matches your frontend URL
         credentials: true,
       })
     );
@@ -114,8 +119,6 @@ class AdvancedCyberSecurityServer {
   }
 
   setupRoutes() {
-    // API routes
-    this.app.use("/api/auth", authRoutes); // Ensure this route is correctly defined
     if (this.dbConnected) {
       // When DB is up, use full routes
       this.app.use("/api/auth", authRoutes);
@@ -124,75 +127,8 @@ class AdvancedCyberSecurityServer {
       this.app.use("/api/users", authMiddleware, usersRoutes);
       this.app.use("/api/settings", authMiddleware, settingsRoutes);
     } else {
-      // NEW: fallback minimal auth for login so frontend can proceed
-      this.app.post("/api/auth/login", (req, res) => {
-        const { email, password } = req.body || {};
-        if (!email || !password) {
-          return res
-            .status(400)
-            .json({ message: "email and password required" });
-        }
-        return res.json({
-          token: "dummy-token",
-          user: {
-            id: "dummy",
-            email,
-            username: email.split("@")[0],
-            role: "analyst",
-          },
-        });
-      });
-      // NEW: minimal profile endpoint in degraded mode
-      this.app.get("/api/auth/profile", (req, res) => {
-        // very basic token passthrough
-        const token = req.headers.authorization?.replace("Bearer ", "");
-        if (!token) return res.status(401).json({ error: "No token provided" });
-        return res.json({
-          user: {
-            id: "dummy",
-            email: "dummy@local",
-            username: "dummy",
-            role: "analyst",
-            preferences: { theme: "dark" },
-          },
-        });
-      });
-      // NEW: optional minimal register to mirror frontend behavior
-      this.app.post("/api/auth/register", (req, res) => {
-        const { email, username } = req.body || {};
-        if (!email || !username) {
-          return res.status(400).json({ error: "username and email required" });
-        }
-        return res.status(201).json({
-          token: "dummy-token",
-          user: { id: "dummy", email, username, role: "analyst" },
-        });
-      });
-
-      // NEW: minimal threats endpoints backed by in-memory engine data
-      this.app.get("/api/threats/recent", (req, res) => {
-        const limit = parseInt(req.query.limit) || 100;
-        const data = this.threatDetectionEngine?.getRecentThreats(limit) || [];
-        return res.json(data);
-      });
-
-      this.app.get("/api/threats/stats", (req, res) => {
-        const hours = parseInt(req.query.hours) || 24;
-        const horizon = Date.now() - hours * 60 * 60 * 1000;
-        const threats = (
-          this.threatDetectionEngine?.getRecentThreats(1000) || []
-        ).filter((t) => new Date(t.timestamp).getTime() >= horizon);
-        const total = threats.length;
-        const high = threats.filter((t) =>
-          ["HIGH", "CRITICAL"].includes(t.threatLevel)
-        ).length;
-        const blocked = threats.filter((t) => t.isBlocked).length;
-        const critical = threats.filter(
-          (t) => t.threatLevel === "CRITICAL"
-        ).length;
-        return res.json({ total, high, blocked, critical });
-      });
-      // You can add other minimal endpoints here if needed
+      // NEW: fallback routes for degraded mode
+      this.setupDegradedRoutes();
     }
 
     // Health check
@@ -201,7 +137,7 @@ class AdvancedCyberSecurityServer {
         status: "healthy",
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        dbConnected: this.dbConnected, // NEW: surface DB status
+        dbConnected: this.dbConnected,
         connections: {
           socketIO: this.io.engine.clientsCount,
           webSocket: this.wss.clients.size,
@@ -216,6 +152,131 @@ class AdvancedCyberSecurityServer {
         clients: this.wss.clients.size,
         subscriptions: this.threatSubscriptions.size,
       });
+    });
+  }
+
+  setupDegradedRoutes() {
+    // Minimal auth routes for degraded mode
+    this.app.post("/api/auth/login", async (req, res) => {
+      try {
+        const { email, password, username } = req.body || {};
+        
+        if ((!email && !username) || !password) {
+          return res.status(400).json({ 
+            error: "Email/username and password required" 
+          });
+        }
+        
+        // In degraded mode, accept any reasonable credentials
+        const userEmail = email || `${username}@local.dev`;
+        const userUsername = username || email.split("@")[0];
+        
+        const user = {
+          id: "dummy",
+          email: userEmail,
+          username: userUsername,
+          role: "analyst",
+          firstName: userUsername,
+          lastName: "User",
+          preferences: { theme: "dark" }
+        };
+        
+        // Save to in-memory storage
+        await this.inMemoryStorage.saveUser(user);
+        
+        return res.json({
+          token: "dummy-token",
+          user: user,
+          message: "Login successful (degraded mode)"
+        });
+      } catch (error) {
+        console.error("Login error in degraded mode:", error);
+        return res.status(500).json({ error: "Login failed" });
+      }
+    });
+
+    this.app.post("/api/auth/register", async (req, res) => {
+      try {
+        const { email, username, password, firstName, lastName } = req.body || {};
+        
+        if (!email || !username || !password) {
+          return res.status(400).json({ 
+            error: "Email, username, and password required" 
+          });
+        }
+        
+        const user = {
+          id: `user_${Date.now()}`,
+          email,
+          username,
+          firstName: firstName || username,
+          lastName: lastName || "User",
+          role: "analyst",
+          preferences: { theme: "dark" }
+        };
+        
+        // Save to in-memory storage
+        await this.inMemoryStorage.saveUser(user);
+        
+        return res.status(201).json({
+          token: "dummy-token",
+          user: user,
+          message: "Registration successful (degraded mode)"
+        });
+      } catch (error) {
+        console.error("Registration error in degraded mode:", error);
+        return res.status(500).json({ error: "Registration failed" });
+      }
+    });
+
+    this.app.get("/api/auth/profile", async (req, res) => {
+      try {
+        const token = req.headers.authorization?.replace("Bearer ", "");
+        if (!token) {
+          return res.status(401).json({ error: "No token provided" });
+        }
+        
+        // In degraded mode, return a default user
+        return res.json({
+          user: {
+            id: "dummy",
+            email: "user@local.dev",
+            username: "demo_user",
+            role: "analyst",
+            firstName: "Demo",
+            lastName: "User",
+            preferences: { theme: "dark" },
+          },
+        });
+      } catch (error) {
+        return res.status(401).json({ error: "Invalid token" });
+      }
+    });
+
+    // Minimal threats endpoints
+    this.app.get("/api/threats/recent", async (req, res) => {
+      try {
+        const limit = parseInt(req.query.limit) || 100;
+        const data = await this.inMemoryStorage.findThreats(
+          {},
+          { limit, sort: "timestamp desc" }
+        );
+        return res.json(data);
+      } catch (error) {
+        console.error("Error getting recent threats:", error);
+        return res.json([]);
+      }
+    });
+
+    this.app.get("/api/threats/stats", async (req, res) => {
+      try {
+        const hours = parseInt(req.query.hours) || 24;
+        const stats = await this.inMemoryStorage.getThreatStats(hours);
+        return res.json(stats);
+      } catch (error) {
+        console.error("Error getting threat stats:", error);
+        return res.json({ total: 0, high: 0, blocked: 0, critical: 0 });
+      }
     });
   }
 
@@ -277,12 +338,22 @@ class AdvancedCyberSecurityServer {
       // Handle real-time threat queries
       socket.on("query-threats", async (query) => {
         try {
-          const ThreatData = require("./models/ThreatData");
-          const threats = await ThreatData.find(query)
-            .limit(100)
-            .sort({ timestamp: -1 });
-          socket.emit("threats-result", threats);
+          if (this.dbConnected) {
+            const ThreatData = require("./models/ThreatData");
+            const threats = await ThreatData.find(query)
+              .limit(100)
+              .sort({ timestamp: -1 });
+            socket.emit("threats-result", threats);
+          } else {
+            // Use in-memory storage when database is not available
+            const threats = await this.inMemoryStorage.findThreats(query, {
+              limit: 100,
+              sort: "timestamp desc",
+            });
+            socket.emit("threats-result", threats);
+          }
         } catch (error) {
+          logger.error("Error querying threats:", error);
           socket.emit("error", { message: "Failed to query threats" });
         }
       });
@@ -329,10 +400,22 @@ class AdvancedCyberSecurityServer {
 
       socket.on("request-historical-data", async (params) => {
         try {
-          const ThreatData = require("./models/ThreatData");
-          const data = await this.getHistoricalData(params);
-          socket.emit("historical-data", data);
+          if (this.dbConnected) {
+            const ThreatData = require("./models/ThreatData");
+            const data = await ThreatData.find({})
+              .limit(100)
+              .sort({ timestamp: -1 });
+            socket.emit("historical-data", data);
+          } else {
+            // Use in-memory storage when database is not available
+            const data = await this.inMemoryStorage.findThreats(
+              {},
+              { limit: 100, sort: "timestamp desc" }
+            );
+            socket.emit("historical-data", data);
+          }
         } catch (error) {
+          logger.error("Error fetching historical data:", error);
           socket.emit("error", { message: "Failed to fetch historical data" });
         }
       });
@@ -353,7 +436,15 @@ class AdvancedCyberSecurityServer {
       ws.on("message", (data) => {
         try {
           const message = JSON.parse(data);
-          this.handleWebSocketMessage(ws, message);
+          // Handle real network data
+          if (message.type === "REAL_NETWORK_DATA" && message.data) {
+            // Pass to threat detection engine
+            if (this.threatDetectionEngine) {
+              this.threatDetectionEngine.processRealTimeData(message.data);
+            }
+          } else {
+            this.handleWebSocketMessage(ws, message);
+          }
         } catch (error) {
           logger.error("WebSocket message parsing error:", error);
           ws.send(
@@ -398,6 +489,18 @@ class AdvancedCyberSecurityServer {
         ws.ping();
       });
     }, 30000); // Check every 30 seconds
+  }
+
+  setupNetworkAgent() {
+    try {
+      const HackathonNetworkAgent = require("./agents/NetworkDataCollector");
+      this.networkAgent = new HackathonNetworkAgent();
+      this.networkAgent.start();
+      // Listen for incoming data if you want to process locally
+      // Or just let backend WebSocket handle it
+    } catch (error) {
+      logger.warn("HackathonNetworkAgent not available:", error);
+    }
   }
 
   handleWebSocketMessage(ws, message) {
@@ -481,7 +584,11 @@ class AdvancedCyberSecurityServer {
   setupThreatDetection() {
     try {
       const ThreatDetectionEngine = require("./services/advanced/threatDetectionEngine");
-      this.threatDetectionEngine = new ThreatDetectionEngine(this.io, this.wss);
+      this.threatDetectionEngine = new ThreatDetectionEngine(
+        this.io,
+        this.wss,
+        this
+      );
 
       // Lazy-load agents; continue without them if unavailable
       let RealNetworkTelemetryAgent;
@@ -563,6 +670,7 @@ class AdvancedCyberSecurityServer {
 
   broadcastThreatStream() {
     if (this.threatSubscriptions.size === 0) return;
+    if (!this.threatDetectionEngine) return;
 
     // Get recent threats for streaming
     const recentThreats = this.threatDetectionEngine.getRecentThreats(10);
@@ -571,20 +679,27 @@ class AdvancedCyberSecurityServer {
       const { ws, filters } = subscription;
 
       if (ws.readyState === WebSocket.OPEN) {
-        // Filter threats based on client preferences
-        const filteredThreats = this.filterThreatsForClient(
-          recentThreats,
-          filters
-        );
+        try {
+          // Filter threats based on client preferences
+          const filteredThreats = this.filterThreatsForClient(
+            recentThreats,
+            filters
+          );
 
-        if (filteredThreats.length > 0) {
-          ws.send(
-            JSON.stringify({
-              type: "THREAT_STREAM_UPDATE",
-              data: filteredThreats,
-              timestamp: new Date().toISOString(),
-              count: filteredThreats.length,
-            })
+          if (filteredThreats.length > 0) {
+            ws.send(
+              JSON.stringify({
+                type: "THREAT_STREAM_UPDATE",
+                data: filteredThreats,
+                timestamp: new Date().toISOString(),
+                count: filteredThreats.length,
+              })
+            );
+          }
+        } catch (error) {
+          logger.warn(
+            `Failed to send threat stream to client ${clientId}:`,
+            error.message
           );
         }
       }
@@ -593,6 +708,7 @@ class AdvancedCyberSecurityServer {
 
   broadcastNetworkTopology() {
     if (this.networkTopologyClients.size === 0) return;
+    if (!this.threatDetectionEngine) return;
 
     const topologyData = this.calculateNetworkTopology();
 
@@ -602,36 +718,51 @@ class AdvancedCyberSecurityServer {
       );
 
       if (client && client.readyState === WebSocket.OPEN) {
-        client.send(
-          JSON.stringify({
-            type: "NETWORK_TOPOLOGY_UPDATE",
-            data: topologyData,
-            timestamp: new Date().toISOString(),
-          })
-        );
+        try {
+          client.send(
+            JSON.stringify({
+              type: "NETWORK_TOPOLOGY_UPDATE",
+              data: topologyData,
+              timestamp: new Date().toISOString(),
+            })
+          );
+        } catch (error) {
+          logger.warn(
+            `Failed to send network topology to client ${clientId}:`,
+            error.message
+          );
+        }
       }
     });
   }
 
   broadcastRealTimeStats() {
+    if (!this.threatDetectionEngine) return;
+
     const stats = this.calculateRealTimeStats();
 
     // Socket.io broadcast
     this.io.to("threats").emit("realTimeStatsUpdate", stats);
 
-    // WebSocket broadcast
+    // WebSocket broadcast - only to clients that have requested real-time stats
+    // Since real-time stats are automatically sent to all connected clients,
+    // we don't need to check subscriptions here
     this.wss.clients.forEach((client) => {
-      if (
-        client.readyState === WebSocket.OPEN &&
-        client.subscriptions.has("real_time_stats")
-      ) {
-        client.send(
-          JSON.stringify({
-            type: "REAL_TIME_STATS_UPDATE",
-            data: stats,
-            timestamp: new Date().toISOString(),
-          })
-        );
+      if (client.readyState === WebSocket.OPEN) {
+        try {
+          client.send(
+            JSON.stringify({
+              type: "REAL_TIME_STATS_UPDATE",
+              data: stats,
+              timestamp: new Date().toISOString(),
+            })
+          );
+        } catch (error) {
+          logger.warn(
+            `Failed to send real-time stats to client ${client.id}:`,
+            error.message
+          );
+        }
       }
     });
   }
@@ -739,7 +870,10 @@ class AdvancedCyberSecurityServer {
         nodes.set(threat.sourceIP, {
           id: threat.sourceIP,
           ip: threat.sourceIP,
-          type: threat.sourceIP.startsWith("192.168") ? "internal" : "external",
+          type:
+            threat.sourceIP && threat.sourceIP.startsWith("192.168")
+              ? "internal"
+              : "external",
           threatCount: 1,
           lastSeen: threat.timestamp,
           location: threat.sourceLocation,
@@ -827,7 +961,10 @@ class AdvancedCyberSecurityServer {
 
     // Close HTTP server
     this.server.close(() => {
-      mongoose.connection.close();
+      // Only close MongoDB connection if it's connected
+      if (mongoose.connection && mongoose.connection.readyState === 1) {
+        mongoose.connection.close();
+      }
       process.exit(0);
     });
   }
