@@ -11,6 +11,10 @@ const errorHandler = require("./middleware/errorHandler");
 const logger = require("./utils/logger");
 require("dotenv").config();
 
+// NEW: remove hard dependency on agents (lazy-load later)
+// const RealNetworkTelemetryAgent = require("./agents/RealNetworkAgent");
+// const SystemTelemetryAgent = require("./agents/SystemTelemetryAgent");
+
 const authRoutes = require("./routes/auth");
 const threatsRoutes = require("./routes/threats");
 const analyticsRoutes = require("./routes/analytics");
@@ -111,6 +115,7 @@ class AdvancedCyberSecurityServer {
 
   setupRoutes() {
     // API routes
+    this.app.use("/api/auth", authRoutes); // Ensure this route is correctly defined
     if (this.dbConnected) {
       // When DB is up, use full routes
       this.app.use("/api/auth", authRoutes);
@@ -127,7 +132,65 @@ class AdvancedCyberSecurityServer {
             .status(400)
             .json({ message: "email and password required" });
         }
-        return res.json({ token: "dummy-token", user: { email } });
+        return res.json({
+          token: "dummy-token",
+          user: {
+            id: "dummy",
+            email,
+            username: email.split("@")[0],
+            role: "analyst",
+          },
+        });
+      });
+      // NEW: minimal profile endpoint in degraded mode
+      this.app.get("/api/auth/profile", (req, res) => {
+        // very basic token passthrough
+        const token = req.headers.authorization?.replace("Bearer ", "");
+        if (!token) return res.status(401).json({ error: "No token provided" });
+        return res.json({
+          user: {
+            id: "dummy",
+            email: "dummy@local",
+            username: "dummy",
+            role: "analyst",
+            preferences: { theme: "dark" },
+          },
+        });
+      });
+      // NEW: optional minimal register to mirror frontend behavior
+      this.app.post("/api/auth/register", (req, res) => {
+        const { email, username } = req.body || {};
+        if (!email || !username) {
+          return res.status(400).json({ error: "username and email required" });
+        }
+        return res.status(201).json({
+          token: "dummy-token",
+          user: { id: "dummy", email, username, role: "analyst" },
+        });
+      });
+
+      // NEW: minimal threats endpoints backed by in-memory engine data
+      this.app.get("/api/threats/recent", (req, res) => {
+        const limit = parseInt(req.query.limit) || 100;
+        const data = this.threatDetectionEngine?.getRecentThreats(limit) || [];
+        return res.json(data);
+      });
+
+      this.app.get("/api/threats/stats", (req, res) => {
+        const hours = parseInt(req.query.hours) || 24;
+        const horizon = Date.now() - hours * 60 * 60 * 1000;
+        const threats = (
+          this.threatDetectionEngine?.getRecentThreats(1000) || []
+        ).filter((t) => new Date(t.timestamp).getTime() >= horizon);
+        const total = threats.length;
+        const high = threats.filter((t) =>
+          ["HIGH", "CRITICAL"].includes(t.threatLevel)
+        ).length;
+        const blocked = threats.filter((t) => t.isBlocked).length;
+        const critical = threats.filter(
+          (t) => t.threatLevel === "CRITICAL"
+        ).length;
+        return res.json({ total, high, blocked, critical });
       });
       // You can add other minimal endpoints here if needed
     }
@@ -414,14 +477,66 @@ class AdvancedCyberSecurityServer {
     );
   }
 
+  // NEW: centralized real-time threat detection setup with agents
+  setupThreatDetection() {
+    try {
+      const ThreatDetectionEngine = require("./services/advanced/threatDetectionEngine");
+      this.threatDetectionEngine = new ThreatDetectionEngine(this.io, this.wss);
+
+      // Lazy-load agents; continue without them if unavailable
+      let RealNetworkTelemetryAgent;
+      let SystemTelemetryAgent;
+      try {
+        RealNetworkTelemetryAgent = require("./agents/RealNetworkAgent");
+      } catch (e) {
+        logger.warn(
+          "RealNetworkAgent not found; running without network telemetry agent."
+        );
+      }
+      try {
+        SystemTelemetryAgent = require("./agents/SystemTelemetryAgent");
+      } catch (e) {
+        logger.warn(
+          "SystemTelemetryAgent not found; running without system telemetry agent."
+        );
+      }
+
+      // Start real network monitoring (event-driven ingestion) if present
+      if (RealNetworkTelemetryAgent) {
+        this.networkAgent = new RealNetworkTelemetryAgent();
+        this.networkAgent.on("telemetry", async (payload) => {
+          try {
+            await this.threatDetectionEngine.processRealTimeData(payload);
+          } catch (err) {
+            logger.error("Failed to process network telemetry:", err);
+          }
+        });
+        this.networkAgent.start();
+      }
+
+      if (SystemTelemetryAgent) {
+        this.systemAgent = new SystemTelemetryAgent(this.threatDetectionEngine);
+        this.systemAgent.start();
+      }
+
+      // Start detection engine (awaits real-time data)
+      this.threatDetectionEngine.start();
+
+      logger.info("✅ Real-time threat detection initialized");
+    } catch (error) {
+      logger.error(
+        "❌ Failed to initialize real-time threat detection:",
+        error
+      );
+    }
+  }
+
   setupRealTimeServices() {
-    // Initialize advanced threat detection
-    const ThreatDetectionEngine = require("./services/advanced/threatDetectionEngine");
-    this.threatDetectionEngine = new ThreatDetectionEngine(this.io, this.wss);
+    // Initialize advanced threat detection via agents
+    this.setupThreatDetection();
 
     // Start services
     schedulerService.initialize(this.io);
-    this.threatDetectionEngine.start();
 
     // Start real-time data broadcasting
     this.startRealTimeBroadcasting();

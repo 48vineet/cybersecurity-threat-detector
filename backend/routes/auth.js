@@ -83,27 +83,30 @@ router.post("/register", async (req, res) => {
     });
   } catch (error) {
     logger.error("Registration error:", error);
-    
+
     // Handle MongoDB validation errors
-    if (error.name === 'ValidationError') {
-      const validationErrors = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({ 
-        error: "Validation failed", 
-        details: validationErrors 
+    if (error.name === "ValidationError") {
+      const validationErrors = Object.values(error.errors).map(
+        (err) => err.message
+      );
+      return res.status(400).json({
+        error: "Validation failed",
+        details: validationErrors,
       });
     }
-    
+
     // Handle MongoDB duplicate key errors
     if (error.code === 11000) {
       const field = Object.keys(error.keyValue)[0];
-      return res.status(400).json({ 
-        error: `${field} already exists` 
+      return res.status(400).json({
+        error: `${field} already exists`,
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       error: "Internal server error",
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details:
+        process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 });
@@ -112,6 +115,8 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    logger.info("Login attempt:", { email }); // Log the login attempt
 
     // Find user
     const user = await User.findOne({ email });
@@ -154,8 +159,7 @@ router.post("/login", async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
-    logger.info(`User logged in: ${email}`);
-
+    logger.info("Login successful:", { email });
     res.json({
       message: "Login successful",
       token,

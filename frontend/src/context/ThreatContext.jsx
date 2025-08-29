@@ -9,6 +9,14 @@ import { io } from "socket.io-client";
 import axios from "axios";
 import toast from "react-hot-toast";
 
+// NEW: centralize endpoints
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+const SOCKET_IO_URL =
+  import.meta.env.VITE_SOCKET_IO_URL || "http://localhost:3001";
+const WS_URL =
+  import.meta.env.VITE_WS_URL ||
+  `ws://localhost:${import.meta.env.VITE_WS_PORT || 3002}`;
+
 const ThreatContext = createContext();
 
 const threatReducer = (state, action) => {
@@ -110,7 +118,7 @@ export const ThreatProvider = ({ children }) => {
   };
 
   const setupSocketIO = () => {
-    socketRef.current = io("http://localhost:3001", {
+    socketRef.current = io(SOCKET_IO_URL, {
       transports: ["websocket", "polling"],
       upgrade: true,
       rememberUpgrade: true,
@@ -204,7 +212,7 @@ export const ThreatProvider = ({ children }) => {
   };
 
   const setupWebSocket = () => {
-    const wsUrl = `ws://localhost:3002`;
+    const wsUrl = WS_URL;
     wsRef.current = new WebSocket(wsUrl);
 
     wsRef.current.onopen = () => {
@@ -397,8 +405,8 @@ export const ThreatProvider = ({ children }) => {
       dispatch({ type: "SET_LOADING", payload: true });
 
       const [threatsResponse, statsResponse] = await Promise.all([
-        axios.get("http://localhost:3001/api/threats/recent"),
-        axios.get("http://localhost:3001/api/threats/stats"),
+        axios.get(`${API_BASE_URL}/threats/recent`),
+        axios.get(`${API_BASE_URL}/threats/stats`),
       ]);
 
       dispatch({ type: "SET_THREATS", payload: threatsResponse.data });
@@ -436,7 +444,7 @@ export const ThreatProvider = ({ children }) => {
 
   const blockIP = async (ip) => {
     try {
-      await axios.post("http://localhost:3001/api/threats/block-ip", { ip });
+      await axios.post(`${API_BASE_URL}/threats/block-ip`, { ip });
       toast.success(`IP ${ip} has been blocked`);
     } catch (error) {
       toast.error("Failed to block IP");
@@ -445,9 +453,7 @@ export const ThreatProvider = ({ children }) => {
 
   const markFalsePositive = async (threatId) => {
     try {
-      await axios.patch(
-        `http://localhost:3001/api/threats/${threatId}/false-positive`
-      );
+      await axios.patch(`${API_BASE_URL}/threats/${threatId}/false-positive`);
       toast.success("Threat marked as false positive");
     } catch (error) {
       toast.error("Failed to mark as false positive");

@@ -48,13 +48,13 @@ const initialState = {
   error: null,
 };
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   useEffect(() => {
+    axios.defaults.baseURL = API_BASE_URL;
     const token = localStorage.getItem("token");
     if (token) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -78,22 +78,30 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
-      dispatch({ type: "LOGIN_START" });
-      const response = await axios.post(
-        `${API_BASE_URL}/auth/login`,
-        credentials
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/auth/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(credentials),
+        }
       );
-      const { token, user } = response.data;
 
-      localStorage.setItem("token", token);
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Login failed");
+      }
 
-      dispatch({ type: "LOGIN_SUCCESS", payload: { user, token } });
+      const data = await response.json();
+      dispatch({
+        type: "LOGIN_SUCCESS",
+        payload: { user: data.user, token: data.token },
+      });
+      localStorage.setItem("token", data.token);
       return { success: true };
     } catch (error) {
-      const errorMessage = error.response?.data?.error || "Login failed";
-      dispatch({ type: "LOGIN_FAILURE", payload: errorMessage });
-      return { success: false, error: errorMessage };
+      console.error("Login error:", error.message);
+      return { success: false, error: error.message };
     }
   };
 
