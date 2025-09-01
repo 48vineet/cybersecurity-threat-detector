@@ -1,7 +1,7 @@
 @echo off
 echo 🚀 Starting Cybersecurity Threat Detector...
 echo.
- 
+  
 echo 📡 Starting Backend Server...
 start "Backend Server" cmd /k "cd /d "D:\\My  Projects\\HACKATHON\\cybersecurity-threat-detector\\backend" && npm start"
 
