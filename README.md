@@ -12,6 +12,21 @@ A **real-time cybersecurity threat detection system** that monitors your network
 - 📡 **WebSocket Updates** - Real-time threat notifications
 - 🎯 **Cross-Platform** - Works on Windows, macOS, and Linux
 
+## ✨ **Env File For Backend**
+# Database Configuration
+MONGODB_URI=Use_Own
+PORT=3001
+WS_PORT=3002
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:5173
+JWT_SECRET=your_super_secret_jwt_key_here_change_in_production
+JWT_EXPIRES_IN=24h
+BCRYPT_ROUNDS=12
+NETWORK_MONITORING_ENABLED=true
+REAL_NETWORK_MONITORING=true
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
 ## 🚀 **Quick Start (Any Machine)**
 
 ### **Option 1: One-Click Setup (Recommended)**
@@ -238,3 +253,4 @@ This cybersecurity threat detector is designed to be:
 ---
 
 **🚀 Ready to secure your network? Just copy the folder and run the startup script!**
+
