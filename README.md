@@ -13,7 +13,7 @@ A **real-time cybersecurity threat detection system** that monitors your network
 - 🎯 **Cross-Platform** - Works on Windows, macOS, and Linux
 
 ## ✨ **Env File For Backend**
-# Database Configuration
+
 MONGODB_URI=Use_Own
 PORT=3001
 WS_PORT=3002
@@ -253,4 +253,5 @@ This cybersecurity threat detector is designed to be:
 ---
 
 **🚀 Ready to secure your network? Just copy the folder and run the startup script!**
+
 
