@@ -7,7 +7,7 @@ const authReducer = (state, action) => {
   switch (action.type) {
     case "LOGIN_START":
       return { ...state, loading: true, error: null };
-    case "LOGIN_SUCCESS":
+    case "LOGIN_SUCCESS": 
       return {
         ...state,
         loading: false,
