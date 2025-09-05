@@ -8,7 +8,7 @@ import {
 import { io } from "socket.io-client";
 import axios from "axios";
 import toast from "react-hot-toast";
-
+ 
 // NEW: centralize endpoints
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 const SOCKET_IO_URL =
